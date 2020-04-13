@@ -1,0 +1,283 @@
+
+new_result <- function(
+  status = character(),
+  details = character(),
+  description = character()
+) {
+  fields <- list2(
+    status = vec_assert(status, character()),
+    details = vec_assert(details, character()),
+    description = vec_assert(description, character()),
+  )
+  new_rcrd(fields, class = "chex_result")
+}
+
+result <- function(
+  status,
+  details = chex::details(status) %||% NA_character_,
+  description = NA_character_
+) {
+  c(status, details, description) %<-% vec_recycle_common(
+    !!!vec_cast_common(
+      status,
+      details,
+      description,
+      .to = character()
+    )
+  )
+  new_result(status, details, description)
+}
+
+as_result <- function(x, ...) {
+  vec_cast(x = x, to = new_result(), ...)
+}
+
+is_result <- function(x, size = NULL) {
+  vec_is(x, new_result(), size)
+}
+
+
+# output ------------------------------------------------------------------
+
+format.chex_result <- function(x, ...) {
+  status(x)
+}
+
+obj_print_header.chex_result <- function(x, ...) {
+  if (isTRUE(getOption("chex.verbose", FALSE))) {
+    cli::cat_rule("checkdata")
+    cli::cat_line("version: ", utils::packageVersion("chex"))
+    cli::cat_line()
+  }
+  invisible(x)
+}
+
+obj_print_data.chex_result <- function(x, ...) {
+  if (vec_is_empty(x)) return(invisible(x))
+  cli::cat_rule("CHECKS")
+  desc <- coalesce(
+    description(x),
+    crayon::silver("(check #", vec_seq_along(x), ")", sep = "")
+  )
+  details <- format_details(x)
+  out <- paste(symbol(x), desc, "...", status(x))
+  out <- paste0(out, details)
+
+  cli::cat_line(out)
+  invisible(x)
+}
+
+format_details <- function(x, bullet = cli::symbol$arrow_right, level = 2L) {
+  bullet <- bullet %||% " "
+  details <- vec_chop(details(x))
+  wrapped <- strwrap(
+    paste(bullet, details),
+    indent = (level - 1L) * 2L,
+    exdent = level * 2L,
+    simplify = FALSE
+  )
+  out <- vapply(wrapped, paste, character(1L), collapse = "\n")
+  out <- colorize(out, color(x))
+  missing <- is.na(details)
+  vec_slice(out, !missing) <- paste0("\n", vec_slice(out, !missing))
+  vec_slice(out, missing) <- ""
+  out
+}
+
+
+# casting / coercion ------------------------------------------------------
+
+vec_ptype2.chex_result <- function(x, y, ...) {
+  UseMethod("vec_ptype2.chex_result", y)
+}
+
+vec_ptype2.chex_result.default <- function(x, y, ..., x_arg = "x", y_arg = "y") {
+  vec_default_ptype2(x, y, ..., x_arg = x_arg, y_arg = y_arg)
+}
+
+vec_ptype2.chex_result.chex_result <- function(x, y, ...) new_result()
+
+vec_ptype2.chex_result.character <- function(x, y, ...) new_result()
+vec_ptype2.character.chex_result <- function(x, y, ...) new_result()
+
+vec_cast.chex_result <- function(x, to, ...) {
+  UseMethod("vec_cast.chex_result")
+}
+
+vec_cast.chex_result.default <- function(x, to, ..., x_arg = "x", to_arg = "to") {
+  vec_default_cast(x, to, x_arg, to_arg)
+}
+
+vec_cast.chex_result.chex_result <- function(x, to, ...) x
+
+vec_cast.character.chex_result <- function(x, to, ...) status(x)
+vec_cast.chex_result.character <- function(x, to, ...) {
+  result(x)
+}
+
+vec_cast.chex_result.logical <- function(x, to, ...) {
+  status <- c("fail", "pass")[x + 1]
+  details <- details(x) %||% NA_character_
+  description <- description(x) %||% NA_character_
+  result(status, details, description)
+}
+
+vec_cast.logical.chex_result <- function(x, to, ...) {
+  recode_chr(
+    .x = x,
+    pass = TRUE,
+    warning = getOption("chex.allow_warning", FALSE),
+    fail = FALSE,
+    error = FALSE,
+    invalid = FALSE,
+  )
+}
+
+as.data.frame.chex_result <- function(x, ...) {
+  vec_cast(x, new_data_frame())
+}
+
+vec_cast.data.frame.chex_result <- function(x, to, ...) {
+  new_data_frame(unclass(x))
+}
+
+
+# comparison / equality ---------------------------------------------------
+
+vec_proxy_compare.chex_result <- function(x, ...) {
+  recode_chr(
+    x,
+    skip = 0L,
+    pass = 10L,
+    warning = 20L,
+    fail = 30L,
+    invalid = 30L,
+    error = 30L,
+  )
+}
+
+vec_proxy_equal.chex_result <- function(x, ...) {
+  vec_proxy_compare(x, ...)
+}
+
+# aggregate / summary -----------------------------------------------------
+
+vec_math.chex_result <- function(.fn, .x, ...) {
+  switch(.fn,
+    all = all(as.logical(.x), ...),
+    any = any(as.logical(.x), ...),
+    vec_math_base(.fn, .x, ...)
+  )
+}
+
+#' @importFrom stats aggregate
+aggregate.chex_result <- function(x, ...) {
+  x <- vec_slice(x, x != "skip")
+  desc <- crayon::silver("(aggregated)")
+  result <- as_result(all(x))
+  update(result, description = desc)
+}
+
+summary.chex_result <- function(object, ...) {
+  agg <- aggregate(object)
+  list(
+    status = status(agg),
+    details = details(agg),
+    total = vec_size(object),
+    counts = vec_count(object)
+  )
+}
+
+
+# fields ------------------------------------------------------------------
+
+#' @importFrom stats update
+update.chex_result <- function(object, description = NULL) {
+  if (!missing(description)) {
+    description(object) <- description
+  }
+  object
+}
+
+status <- function(x, ...) {
+  UseMethod("status")
+}
+
+status.chex_result <- function(x, ...) {
+  field(x, "status")
+}
+
+status.logical <- function(x, ...) {
+  c("fail", "pass")[x + 1L]
+}
+
+details <- function(x, ...) {
+  UseMethod("details")
+}
+
+details.default <- function(x, ...) {
+  attr(x, "details", exact = TRUE) %||% comment(x)
+}
+
+details.chex_result <- function(x, ...) {
+  field(x, "details")
+}
+
+description.chex_result <- function(x, ...) {
+  field(x, "description")
+}
+
+`description<-.chex_result` <- function(x, value) {
+  field(x, "description") <- value
+  x
+}
+
+
+# virtual fields ----------------------------------------------------------
+
+symbol <- function(x, ...) {
+  syms <- recode_chr(
+    .x = x,
+    .default = "?",
+    .missing = "?",
+    fail = cli::symbol$cross,
+    error = cli::symbol$cross,
+    invalid = cli::symbol$cross,
+    warning = cli::symbol$warning,
+    pass = cli::symbol$tick,
+    skip = "-",
+  )
+  colorize(syms, color(x))
+}
+
+color <- function(x, ...) {
+  recode_chr(
+    .x = x,
+    .default = "magenta",
+    .missing = "magenta",
+    fail = "red",
+    error = "red",
+    invalid = "red",
+    warning = "yellow",
+    pass = "green",
+    skip = "silver",
+  )
+}
+
+
+# DELETE ME ---------------------------------------------------------------
+
+test_result <- function() {
+  result(
+    status = c("pass", "fail", "error", "warning", "skip"),
+    details = c(NA, "something bad", "`...` is not empty.
+
+We detected these problematic arguments:
+* `a`
+
+These dots only exist to allow future extensions and should be empty.
+Did you misspecify an argument?
+", NA, NA),
+    description = c("first test", "second", "third", "penultimate", "last")
+  )
+}
