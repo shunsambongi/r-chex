@@ -1,0 +1,36 @@
+Package: chex
+Title: Run Checks
+Version: 0.1.3
+Authors@R: 
+    person(given = "Shun",
+           family = "Sambongi",
+           role = c("aut", "cre"),
+           email = "shundev3@gmail.com")
+Description: Checks stuff.
+License: file LICENSE
+URL: https://github.com/shunsambongi/chex
+BugReports: https://github.com/shunsambongi/chex/issues
+Imports: 
+    cli,
+    crayon,
+    ellipsis,
+    methods,
+    prettyunits,
+    purrr,
+    rlang,
+    vctrs,
+    zeallot
+Suggests: 
+    dplyr,
+    knitr,
+    logger,
+    mockery,
+    rmarkdown,
+    testthat,
+    withr
+VignetteBuilder: 
+    knitr
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1

@@ -1,0 +1,217 @@
+---
+title: "Writing Checks"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Writing Checks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(chex)
+```
+
+## Basic checks
+
+At its core, checks are just predicate functions, which return `TRUE` or `FALSE`
+values, which are converted to pass and fail results. rlang-style lambdas are
+also accepted. These checks are passed to `check_that()` along with an input
+value.
+
+```{r}
+is_count <- function(x) {
+  is.integer(x) & x > 0
+}
+
+check_that(1L, is_count, ~.x == 2L)
+```
+
+Checks can also return multiple logical values, which are converted into 
+multiple results.
+
+```{r}
+
+check_that(-3:3, is_count)
+```
+
+
+## Descriptions
+
+In the examples above, the check results show the description (e.g. `is_count`)
+in addition to the pass or fail value. This description can be customized a few
+different ways.
+
+### Named checks
+
+The easiest way to add a custom description is to name your check when calling
+`check_that()`:
+
+```{r}
+x <- 1L
+check_that(x, "`x` is a count" = is_count)
+```
+
+
+### set_description()
+
+If you want to add a more permanent custom description, use the 
+`set_description()` function.
+
+```{r}
+is_count_set <- set_description(is_count, "`x` is a count")
+description(is_count_set)
+
+check_that(x, is_count_set)
+```
+
+When you name a check which already has a description set by `set_description()`
+the name will take precedence.
+
+```{r}
+check_that(x, "overriding set description" = is_count_set)
+```
+
+
+### Dynamic descriptions
+
+Sometimes in advanced use-cases, the description needs to be set dynamically 
+from within the check function itself. This can be accomplished using, the
+`current_check()` function along with `set_description()`, which we saw above:
+
+```{r}
+is_count_dynamic <- function(x) {
+  set_description(current_check(), "dynamically set")
+  is_count(x)
+}
+
+check_that(x, is_count_dynamic)
+```
+
+When used with a named description, the named description is used:
+
+```{r}
+check_that(x, "named descriptions win" = is_count_dynamic)
+```
+
+
+### Returning results
+
+You can also return a result object with a description already attached to it.
+This takes higher precedence than any description that was set using
+`set_description()` whether beforehand or dynamically, but has lower precedence
+than named descriptions.
+
+```{r}
+is_count_result <- function(x) {
+  set_description(current_check(), "not used")
+  result(is_count(x), "x is a count")
+}
+
+check_that(x, is_count_result)
+
+check_that(x, "named descriptions always win" = is_count_result)
+```
+
+
+### Custom S3 class
+
+The final method of adding custom descriptions is the most advanced. This 
+requires creating a custom S3 class and some S3 methods for the class. For
+example: 
+
+```{r}
+my_check <- structure(class = c("my_check", "function"), function(x) {
+  TRUE 
+})
+class(my_check)
+```
+
+Then you can create a `description()` method for your class:
+
+```{r}
+description.my_check <- function(x, ...) {
+  "my check custom description"
+}
+description(my_check)
+
+check_that(mtcars, my_check)
+```
+
+This will work, unless your custom S3 class also returns a result object. In 
+the examples above we see that returning a result takes precedence over a set
+description. However, with a custom S3 class, you can also write a `run_check()`
+method to further customize the behavior:
+
+```{r}
+my_check <- structure(class = c("my_check", "function"), function(x) {
+  result(TRUE, "this will be used, not the `my check custom description`")
+})
+
+# the result description is used, not the check description
+check_that(mtcars, my_check) 
+
+
+# Now define a run_check method. The `check` parameter is your custom check.
+run_check.my_check <- function(check, x) {
+  result <- check(x) # run your check manually
+  set_description(result, "now this overwrites the result description")
+}
+
+# now we have full control
+check_that(mtcars, my_check)
+```
+
+## Reason
+
+Sometimes when a check fails, there will be text beneath the result output which
+explains why the check failed. This can happen, for example, when a check throws
+an error. This is called the "reason". 
+
+```{r}
+check_that(mtcars, function(x) stop("bad. bad. really, really, bad."))
+```
+
+
+You can add a custom reason to your checks, by either throwing and error using
+`stop()` or by returning the result of the `FAIL` function:
+
+```{r}
+less_than_five <- function(x) {
+  if (x >= 5) {
+    return(FAIL("x is not less than 5"))
+  } 
+  TRUE
+}
+
+check_that(5, less_than_five)
+```
+
+
+## Check factories
+
+One useful pattern for creating checks is to use a factory. This way you can use
+a generic template to create many parameterized check functions. For example,
+the `less_than_five()` check in the example above could be parameterized instead
+of the `5` being hard-coded:
+
+```{r}
+is_less_than_n <- function(n) {
+  check <- function(x) {
+    if (x >= n) {
+      return(FAIL(paste0("x is not be less than ", n, ": x = ", x)))
+    }
+    TRUE
+  }
+  set_description(check, paste("x is less than", n))
+}
+
+check_that(7, is_less_than_n(n = 5), is_less_than_n(n = 10))
+```
+
