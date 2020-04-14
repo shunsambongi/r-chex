@@ -1,5 +1,5 @@
 Package: chex
-Title: Perform Checks
+Title: Run Checks
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Shun",
@@ -13,6 +13,7 @@ BugReports: https://github.com/shunsambongi/chex/issues
 Imports: 
     cli,
     ellipsis,
+    methods,
     rlang,
     stats,
     vctrs,
