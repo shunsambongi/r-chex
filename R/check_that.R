@@ -1,4 +1,4 @@
-
+#' @export
 check_that <- function(x, ...) {
   checks <- lapply(unname(enquos(...)), as_check)
   results <- lapply(checks, do_check, x)
@@ -28,6 +28,7 @@ check_cnd <- function(status, description) {
   }
 }
 
+#' @export
 skip_check <- function(details = NULL) {
   signal(details %||% NA_character_, class = "chex_skip")
 }

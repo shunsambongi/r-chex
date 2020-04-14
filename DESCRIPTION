@@ -11,7 +11,10 @@ License: MIT + file LICENSE
 URL: https://github.com/shunsambongi/chex
 BugReports: https://github.com/shunsambongi/chex/issues
 Imports: 
+    cli,
+    ellipsis,
     rlang,
+    stats,
     vctrs,
     zeallot
 Encoding: UTF-8
