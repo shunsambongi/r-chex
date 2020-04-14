@@ -1,10 +1,10 @@
 new_result <- function(
-  status = character(),
+  status = new_status(),
   details = character(),
   description = character()
 ) {
   fields <- list2(
-    status = vec_assert(status, character()),
+    status = vec_assert(status, new_status()),
     details = vec_assert(details, character()),
     description = vec_assert(description, character()),
   )
@@ -14,6 +14,10 @@ new_result <- function(
 # for compatibility with the S4 system
 methods::setOldClass(c("chex_result", "vctrs_rcrd", "vctrs_vctr"))
 
+#' `result` vector
+#'
+#'
+#'
 #' @export
 result <- function(
   status,
@@ -21,24 +25,23 @@ result <- function(
   description = NA_character_
 ) {
   c(status, details, description) %<-% vec_recycle_common(
-    !!!vec_cast_common(
-      status,
-      details,
-      description,
-      .to = character()
-    )
+    status = vec_cast(status, new_status()),
+    details = vec_cast(details, character()),
+    description = vec_cast(description, character()),
   )
   new_result(status, details, description)
 }
 
 #' @export
+#' @rdname result
 as_result <- function(x, ...) {
   vec_cast(x = x, to = new_result(), ...)
 }
 
 #' @export
-is_result <- function(x, size = NULL) {
-  vec_is(x, new_result(), size)
+#' @rdname result
+is_result <- function(x) {
+  vec_is(x, new_result())
 }
 
 
@@ -46,7 +49,7 @@ is_result <- function(x, size = NULL) {
 
 #' @export
 format.chex_result <- function(x, ...) {
-  status(x)
+  format(as_status(x))
 }
 
 #' @export
@@ -68,7 +71,7 @@ obj_print_data.chex_result <- function(x, ...) {
     crayon::silver("(check #", vec_seq_along(x), ")", sep = "")
   )
   details <- format_details(x)
-  out <- paste(symbol(x), desc, "...", status(x))
+  out <- paste(icon(x), desc, "...", as_status(x))
   out <- paste0(out, details)
 
   cli::cat_line(out)
@@ -115,11 +118,10 @@ vec_ptype2.chex_result.chex_result <- function(x, y, ...) new_result()
 
 #' @method vec_ptype2.chex_result character
 #' @export
-vec_ptype2.chex_result.character <- function(x, y, ...) new_result()
-
+vec_ptype2.chex_result.character <- function(x, y, ...) new_status()
 #' @method vec_ptype2.character chex_result
 #' @export
-vec_ptype2.character.chex_result <- function(x, y, ...) new_result()
+vec_ptype2.character.chex_result <- function(x, y, ...) new_status()
 
 #' @method vec_cast chex_result
 #' @export
@@ -141,12 +143,8 @@ vec_cast.chex_result.chex_result <- function(x, to, ...) x
 
 #' @method vec_cast.character chex_result
 #' @export
-vec_cast.character.chex_result <- function(x, to, ...) status(x)
-
-#' @method vec_cast.chex_result character
-#' @export
-vec_cast.chex_result.character <- function(x, to, ...) {
-  result(x)
+vec_cast.character.chex_result <- function(x, to, ...) {
+  vec_cast(as_status(x), to)
 }
 
 #' @method vec_cast.chex_result logical
@@ -161,20 +159,13 @@ vec_cast.chex_result.logical <- function(x, to, ...) {
 #' @method vec_cast.logical chex_result
 #' @export
 vec_cast.logical.chex_result <- function(x, to, ...) {
-  recode_chr(
-    .x = x,
-    pass = TRUE,
-    warning = getOption("chex.allow_warning", FALSE),
-    fail = FALSE,
-    error = FALSE,
-    invalid = FALSE,
-  )
+  vec_cast(as_status(x), to)
 }
 
 #' @method vec_cast.data.frame chex_result
 #' @export
 vec_cast.data.frame.chex_result <- function(x, to, ...) {
-  new_data_frame(unclass(x))
+  new_data_frame(vec_data(x))
 }
 
 #' @export
@@ -182,26 +173,6 @@ as.data.frame.chex_result <- function(x, ...) {
   vec_cast(x, new_data_frame())
 }
 
-
-# comparison / equality ---------------------------------------------------
-
-#' @export
-vec_proxy_compare.chex_result <- function(x, ...) {
-  recode_chr(
-    x,
-    skip = 0L,
-    pass = 10L,
-    warning = 20L,
-    fail = 30L,
-    invalid = 30L,
-    error = 30L,
-  )
-}
-
-#' @export
-vec_proxy_equal.chex_result <- function(x, ...) {
-  vec_proxy_compare(x, ...)
-}
 
 # aggregate / summary -----------------------------------------------------
 
@@ -227,7 +198,7 @@ aggregate.chex_result <- function(x, ...) {
 summary.chex_result <- function(object, ...) {
   agg <- aggregate(object)
   list(
-    status = status(agg),
+    status = as_status(agg),
     details = details(agg),
     total = vec_size(object),
     counts = vec_count(object)
@@ -244,18 +215,6 @@ update.chex_result <- function(object, description = NULL) {
     description(object) <- description
   }
   object
-}
-
-status <- function(x, ...) {
-  UseMethod("status")
-}
-
-status.chex_result <- function(x, ...) {
-  field(x, "status")
-}
-
-status.logical <- function(x, ...) {
-  c("fail", "pass")[x + 1L]
 }
 
 #' @export
@@ -280,13 +239,13 @@ details.chex_result <- function(x, ...) {
 
 #' @export
 `details<-.default` <- function(x, value) {
-  comment(x) <- value
+  attr(x, "details") <- value
   x
 }
 
 #' @export
 `details<-.chex_result` <- function(x, value) {
-  field(x, "details") <- value
+  field(x, "details") <- vec_recycle(value, vec_size(x))
   x
 }
 
@@ -295,56 +254,6 @@ description.chex_result <- function(x, ...) {
 }
 
 `description<-.chex_result` <- function(x, value) {
-  field(x, "description") <- value
+  field(x, "description") <- vec_recycle(value, vec_size(x))
   x
-}
-
-
-# virtual fields ----------------------------------------------------------
-
-symbol <- function(x, ...) {
-  syms <- recode_chr(
-    .x = x,
-    .default = "?",
-    .missing = "?",
-    fail = cli::symbol$cross,
-    error = cli::symbol$cross,
-    invalid = cli::symbol$cross,
-    warning = cli::symbol$warning,
-    pass = cli::symbol$tick,
-    skip = "-",
-  )
-  colorize(syms, color(x))
-}
-
-color <- function(x, ...) {
-  recode_chr(
-    .x = x,
-    .default = "magenta",
-    .missing = "magenta",
-    fail = "red",
-    error = "red",
-    invalid = "red",
-    warning = "yellow",
-    pass = "green",
-    skip = "silver",
-  )
-}
-
-
-# DELETE ME ---------------------------------------------------------------
-
-test_result <- function() {
-  result(
-    status = c("pass", "fail", "error", "warning", "skip"),
-    details = c(NA, "something bad", "`...` is not empty.
-
-We detected these problematic arguments:
-* `a`
-
-These dots only exist to allow future extensions and should be empty.
-Did you misspecify an argument?
-", NA, NA),
-    description = c("first test", "second", "third", "penultimate", "last")
-  )
 }
