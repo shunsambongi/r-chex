@@ -4,12 +4,20 @@
 \name{chex-package}
 \alias{chex}
 \alias{chex-package}
-\title{chex: What the Package Does (One Line, Title Case)}
+\title{chex: Perform Checks}
 \description{
-What the package does (one paragraph).
+Checks stuff.
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/shunsambongi/chex}
+  \item Report bugs at \url{https://github.com/shunsambongi/chex/issues}
+}
+
 }
 \author{
-\strong{Maintainer}: Shun Sambongi \email{shun.sambongi@biofiredx.com}
+\strong{Maintainer}: Shun Sambongi \email{shundev3@gmail.com}
 
 }
 \keyword{internal}

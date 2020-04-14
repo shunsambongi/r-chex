@@ -1,4 +1,3 @@
-
 new_result <- function(
   status = character(),
   details = character(),
@@ -12,6 +11,10 @@ new_result <- function(
   new_rcrd(fields, class = "chex_result")
 }
 
+# for compatibility with the S4 system
+methods::setOldClass(c("chex_result", "vctrs_rcrd", "vctrs_vctr"))
+
+#' @export
 result <- function(
   status,
   details = chex::details(status) %||% NA_character_,
@@ -28,10 +31,12 @@ result <- function(
   new_result(status, details, description)
 }
 
+#' @export
 as_result <- function(x, ...) {
   vec_cast(x = x, to = new_result(), ...)
 }
 
+#' @export
 is_result <- function(x, size = NULL) {
   vec_is(x, new_result(), size)
 }
@@ -39,10 +44,12 @@ is_result <- function(x, size = NULL) {
 
 # output ------------------------------------------------------------------
 
+#' @export
 format.chex_result <- function(x, ...) {
   status(x)
 }
 
+#' @export
 obj_print_header.chex_result <- function(x, ...) {
   if (isTRUE(getOption("chex.verbose", FALSE))) {
     cli::cat_rule("checkdata")
@@ -52,6 +59,7 @@ obj_print_header.chex_result <- function(x, ...) {
   invisible(x)
 }
 
+#' @export
 obj_print_data.chex_result <- function(x, ...) {
   if (vec_is_empty(x)) return(invisible(x))
   cli::cat_rule("CHECKS")
@@ -87,34 +95,62 @@ format_details <- function(x, bullet = cli::symbol$arrow_right, level = 2L) {
 
 # casting / coercion ------------------------------------------------------
 
+#' @method vec_ptype2 chex_result
+#' @export
+#' @export vec_ptype2.chex_result
+#' @rdname chex-vctrs
 vec_ptype2.chex_result <- function(x, y, ...) {
   UseMethod("vec_ptype2.chex_result", y)
 }
 
+#' @method vec_ptype2.chex_result default
+#' @export
 vec_ptype2.chex_result.default <- function(x, y, ..., x_arg = "x", y_arg = "y") {
   vec_default_ptype2(x, y, ..., x_arg = x_arg, y_arg = y_arg)
 }
 
+#' @method vec_ptype2.chex_result chex_result
+#' @export
 vec_ptype2.chex_result.chex_result <- function(x, y, ...) new_result()
 
+#' @method vec_ptype2.chex_result character
+#' @export
 vec_ptype2.chex_result.character <- function(x, y, ...) new_result()
+
+#' @method vec_ptype2.character chex_result
+#' @export
 vec_ptype2.character.chex_result <- function(x, y, ...) new_result()
 
+#' @method vec_cast chex_result
+#' @export
+#' @export vec_cast.chex_result
+#' @rdname chex-vctrs
 vec_cast.chex_result <- function(x, to, ...) {
   UseMethod("vec_cast.chex_result")
 }
 
+#' @method vec_cast.chex_result default
+#' @export
 vec_cast.chex_result.default <- function(x, to, ..., x_arg = "x", to_arg = "to") {
   vec_default_cast(x, to, x_arg, to_arg)
 }
 
+#' @method vec_cast.chex_result chex_result
+#' @export
 vec_cast.chex_result.chex_result <- function(x, to, ...) x
 
+#' @method vec_cast.character chex_result
+#' @export
 vec_cast.character.chex_result <- function(x, to, ...) status(x)
+
+#' @method vec_cast.chex_result character
+#' @export
 vec_cast.chex_result.character <- function(x, to, ...) {
   result(x)
 }
 
+#' @method vec_cast.chex_result logical
+#' @export
 vec_cast.chex_result.logical <- function(x, to, ...) {
   status <- c("fail", "pass")[x + 1]
   details <- details(x) %||% NA_character_
@@ -122,6 +158,8 @@ vec_cast.chex_result.logical <- function(x, to, ...) {
   result(status, details, description)
 }
 
+#' @method vec_cast.logical chex_result
+#' @export
 vec_cast.logical.chex_result <- function(x, to, ...) {
   recode_chr(
     .x = x,
@@ -133,17 +171,21 @@ vec_cast.logical.chex_result <- function(x, to, ...) {
   )
 }
 
-as.data.frame.chex_result <- function(x, ...) {
-  vec_cast(x, new_data_frame())
-}
-
+#' @method vec_cast.data.frame chex_result
+#' @export
 vec_cast.data.frame.chex_result <- function(x, to, ...) {
   new_data_frame(unclass(x))
+}
+
+#' @export
+as.data.frame.chex_result <- function(x, ...) {
+  vec_cast(x, new_data_frame())
 }
 
 
 # comparison / equality ---------------------------------------------------
 
+#' @export
 vec_proxy_compare.chex_result <- function(x, ...) {
   recode_chr(
     x,
@@ -156,12 +198,14 @@ vec_proxy_compare.chex_result <- function(x, ...) {
   )
 }
 
+#' @export
 vec_proxy_equal.chex_result <- function(x, ...) {
   vec_proxy_compare(x, ...)
 }
 
 # aggregate / summary -----------------------------------------------------
 
+#' @export
 vec_math.chex_result <- function(.fn, .x, ...) {
   switch(.fn,
     all = all(as.logical(.x), ...),
@@ -171,6 +215,7 @@ vec_math.chex_result <- function(.fn, .x, ...) {
 }
 
 #' @importFrom stats aggregate
+#' @export
 aggregate.chex_result <- function(x, ...) {
   x <- vec_slice(x, x != "skip")
   desc <- crayon::silver("(aggregated)")
@@ -178,6 +223,7 @@ aggregate.chex_result <- function(x, ...) {
   update(result, description = desc)
 }
 
+#' @export
 summary.chex_result <- function(object, ...) {
   agg <- aggregate(object)
   list(
@@ -192,6 +238,7 @@ summary.chex_result <- function(object, ...) {
 # fields ------------------------------------------------------------------
 
 #' @importFrom stats update
+#' @export
 update.chex_result <- function(object, description = NULL) {
   if (!missing(description)) {
     description(object) <- description
@@ -211,16 +258,36 @@ status.logical <- function(x, ...) {
   c("fail", "pass")[x + 1L]
 }
 
+#' @export
 details <- function(x, ...) {
   UseMethod("details")
 }
 
+#' @export
 details.default <- function(x, ...) {
   attr(x, "details", exact = TRUE) %||% comment(x)
 }
 
+#' @export
 details.chex_result <- function(x, ...) {
   field(x, "details")
+}
+
+#' @export
+`details<-` <- function(x, value) {
+  UseMethod("details<-")
+}
+
+#' @export
+`details<-.default` <- function(x, value) {
+  comment(x) <- value
+  x
+}
+
+#' @export
+`details<-.chex_result` <- function(x, value) {
+  field(x, "details") <- value
+  x
 }
 
 description.chex_result <- function(x, ...) {

@@ -1,16 +1,20 @@
 Package: chex
-Title: What the Package Does (One Line, Title Case)
+Title: Perform Checks
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Shun",
            family = "Sambongi",
            role = c("aut", "cre"),
-           email = "shun.sambongi@biofiredx.com")
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to
-    pick a license
+           email = "shundev3@gmail.com")
+Description: Checks stuff.
+License: MIT + file LICENSE
+URL: https://github.com/shunsambongi/chex
+BugReports: https://github.com/shunsambongi/chex/issues
 Imports: 
+    cli,
+    ellipsis,
     rlang,
+    stats,
     vctrs,
     zeallot
 Encoding: UTF-8
