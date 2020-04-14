@@ -14,8 +14,3 @@ coalesce <- function(x, y) {
   vec_slice(x, missing) <- vec_slice(y, missing)
   x
 }
-
-colorize <- function(x, color) {
-  color <- vec_recycle(color, size = vec_size(x))
-  mapply(crayon::style, x, color, SIMPLIFY = TRUE, USE.NAMES = FALSE)
-}
