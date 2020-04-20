@@ -79,7 +79,9 @@ as_check.quosure <- function(x, ...) {
 #' @export
 as_check.function <- function(x, description = NULL, ...) {
   ellipsis::check_dots_empty()
-  description(x) <- description
+  if (!missing(description)) {
+    description(x) <- description
+  }
   x
 }
 
