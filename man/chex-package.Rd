@@ -4,7 +4,7 @@
 \name{chex-package}
 \alias{chex}
 \alias{chex-package}
-\title{chex: Perform Checks}
+\title{chex: Run Checks}
 \description{
 Checks stuff.
 }

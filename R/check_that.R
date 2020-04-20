@@ -91,3 +91,24 @@ as_check.logical <- function(x, ...) {
   }
   as_check(f, ...)
 }
+
+
+# check_list --------------------------------------------------------------
+
+#' List of checks
+#'
+#' @param ... list of checks
+#'
+#' @export
+check_list <- function(...) {
+  checks <- unname(enquos(...))
+  structure(checks, class = c("chex_check_list", class(checks)))
+}
+
+#' @export
+as_check.chex_check_list <- function(x, ...) {
+  checks <- force(x)
+  function(x) {
+    check_that(x, !!!checks)
+  }
+}
