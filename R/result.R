@@ -16,7 +16,14 @@ methods::setOldClass(c("chex_result", "vctrs_rcrd", "vctrs_vctr"))
 
 #' `result` vector
 #'
+#' @param status the status of the result
+#' @param details any details explaining the status
+#' @param description description of the check which produced the result
 #'
+#' @param x
+#'   * For `as_result()`: an object to cast
+#'   * For `is_result()`: an object to check
+#' @param ... other arguments passed onto methods
 #'
 #' @export
 result <- function(
@@ -210,40 +217,35 @@ summary.chex_result <- function(object, ...) {
 
 #' @importFrom stats update
 #' @export
-update.chex_result <- function(object, description = NULL) {
+update.chex_result <- function(object, description = NULL, ...) {
+  ellipsis::check_dots_empty()
   if (!missing(description)) {
     description(object) <- description
   }
   object
 }
 
-#' @export
 details <- function(x, ...) {
   UseMethod("details")
 }
 
-#' @export
 details.default <- function(x, ...) {
   attr(x, "details", exact = TRUE) %||% comment(x)
 }
 
-#' @export
 details.chex_result <- function(x, ...) {
   field(x, "details")
 }
 
-#' @export
 `details<-` <- function(x, value) {
   UseMethod("details<-")
 }
 
-#' @export
 `details<-.default` <- function(x, value) {
   attr(x, "details") <- value
   x
 }
 
-#' @export
 `details<-.chex_result` <- function(x, value) {
   field(x, "details") <- vec_recycle(value, vec_size(x))
   x

@@ -2,7 +2,7 @@ description <- function(x, ...) {
   UseMethod("description")
 }
 
-`description<-` <- function(x, ...) {
+`description<-` <- function(x, value) {
   UseMethod("description<-")
 }
 
