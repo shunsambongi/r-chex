@@ -175,7 +175,7 @@ vec_math.chex_status <- function(.fn, .x, ...) {
   switch(.fn,
     all = all(.x, ...),
     any = any(.x, ...),
-    vec_math_base(.f, .x, ...)
+    vec_math_base(.fn, .x, ...)
   )
 }
 
@@ -190,7 +190,6 @@ NULL
 
 #' @export
 #' @rdname preset-status
-#' @format
 SKIP <- new_status("SKIP")
 
 #' @export

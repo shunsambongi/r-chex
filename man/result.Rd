@@ -16,6 +16,22 @@ as_result(x, ...)
 
 is_result(x)
 }
+\arguments{
+\item{status}{the status of the result}
+
+\item{details}{any details explaining the status}
+
+\item{description}{description of the check which produced the result}
+
+\item{x}{\itemize{
+\item For \code{as_result()}: an object to cast
+\itemize{
+\item For \code{is_result()}: an object to check
+}
+}}
+
+\item{...}{other arguments passed onto methods}
+}
 \description{
 \code{result} vector
 }

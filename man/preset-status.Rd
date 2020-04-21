@@ -12,7 +12,7 @@
 \alias{INVALID}
 \title{Preset Statuses}
 \format{
-
+An object of class \code{chex_status} (inherits from \code{vctrs_vctr}) of length 1.
 
 
 
