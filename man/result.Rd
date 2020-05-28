@@ -2,36 +2,21 @@
 % Please edit documentation in R/result.R
 \name{result}
 \alias{result}
-\alias{as_result}
-\alias{is_result}
-\title{\code{result} vector}
+\title{Create a result}
 \usage{
-result(
-  status,
-  details = chex::details(status) \%||\% NA_character_,
-  description = NA_character_
-)
-
-as_result(x, ...)
-
-is_result(x)
+result(status, description)
 }
 \arguments{
-\item{status}{the status of the result}
-
-\item{details}{any details explaining the status}
-
-\item{description}{description of the check which produced the result}
-
-\item{x}{\itemize{
-\item For \code{as_result()}: an object to cast
+\item{status}{the result status. This can be one of:
 \itemize{
-\item For \code{is_result()}: an object to check
-}
+\item logical vector (\code{TRUE} / \code{FALSE})
+\item character vector (\code{"PASS"}, \code{"FAIL"}, etc.)
+\item \code{chex::PASS} or \code{chex::FAIL}
+\item value of \code{\link[chex:PASS]{chex::PASS()}} or \code{\link[chex:FAIL]{chex::FAIL()}}
 }}
 
-\item{...}{other arguments passed onto methods}
+\item{description}{the description of the result}
 }
 \description{
-\code{result} vector
+Create a result
 }
