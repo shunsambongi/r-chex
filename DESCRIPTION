@@ -1,6 +1,6 @@
 Package: chex
 Title: Run Checks
-Version: 0.0.1.9000
+Version: 0.0.2
 Authors@R: 
     person(given = "Shun",
            family = "Sambongi",
@@ -15,11 +15,11 @@ Imports:
     crayon,
     ellipsis,
     methods,
+    prettyunits,
     purrr,
     rlang,
     vctrs,
-    zeallot,
-    prettyunits
+    zeallot
 Suggests: 
     dplyr,
     testthat
