@@ -2,15 +2,24 @@
 % Please edit documentation in R/check.R
 \name{as_check}
 \alias{as_check}
-\title{Create a checker}
+\alias{check}
+\title{Convert object to check}
 \usage{
 as_check(x, ...)
 }
 \arguments{
-\item{x}{object to convert to check}
+\item{x}{an object to convert}
 
-\item{...}{other arguments passed onto methods}
+\item{...}{other args passed onto methods}
 }
 \description{
-Create a checker
+A check is function that takes one argument and returns a pass or fail value.
+There are a few types which are recognized as pass or fail.
+\itemize{
+\item logical values \code{TRUE} and \code{FALSE} which are recognized as pass and fail,
+respectively
+\item \code{chex::PASS} or the result of calling \code{\link[chex:PASS]{chex::PASS()}} with a reason
+\item likewise for \code{chex::FAIL}
+\item A result object created by \code{\link[=result]{result()}}
+}
 }

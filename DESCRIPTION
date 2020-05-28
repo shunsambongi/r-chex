@@ -15,10 +15,14 @@ Imports:
     crayon,
     ellipsis,
     methods,
+    purrr,
     rlang,
-    stats,
     vctrs,
-    zeallot
+    zeallot,
+    prettyunits
+Suggests: 
+    dplyr,
+    testthat
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

@@ -1,261 +1,269 @@
+
+# constructor -------------------------------------------------------------
+
 new_result <- function(
   status = new_status(),
-  details = character(),
-  description = character()
+  description = character(),
+  duration = new_duration()
 ) {
   fields <- list2(
     status = vec_assert(status, new_status()),
-    details = vec_assert(details, character()),
     description = vec_assert(description, character()),
+    duration = vec_assert(duration, new_duration()),
   )
-  new_rcrd(fields, class = "chex_result")
+  new_rcrd(fields, class = c("chex_result", "chex_logical"))
 }
 
-# for compatibility with the S4 system
-methods::setOldClass(c("chex_result", "vctrs_rcrd", "vctrs_vctr"))
-
-#' `result` vector
+#' Create a result
 #'
-#' @param status the status of the result
-#' @param details any details explaining the status
-#' @param description description of the check which produced the result
-#'
-#' @param x
-#'   * For `as_result()`: an object to cast
-#'   * For `is_result()`: an object to check
-#' @param ... other arguments passed onto methods
-#'
+#' @param status the result status. This can be one of:
+#'   * logical vector (`TRUE` / `FALSE`)
+#'   * character vector (`"PASS"`, `"FAIL"`, etc.)
+#'   * `chex::PASS` or `chex::FAIL`
+#'   * value of [chex::PASS()] or [chex::FAIL()]
+#' @param description the description of the result
 #' @export
-result <- function(
-  status,
-  details = chex::details(status) %||% NA_character_,
-  description = NA_character_
-) {
-  c(status, details, description) %<-% vec_recycle_common(
-    status = vec_cast(status, new_status()),
-    details = vec_cast(details, character()),
-    description = vec_cast(description, character()),
+result <- function(status, description) {
+  status <- if (is.character(status)) {
+    status_(status)
+  } else {
+    as_status(status)
+  }
+  description <- vec_cast(description, character())
+  duration <- vec_cast(NA, new_duration())
+  c(status, description, duration) %<-% vec_recycle_common(
+    status,
+    description,
+    duration,
   )
-  new_result(status, details, description)
+  new_result(status, description, duration)
 }
 
-#' @export
-#' @rdname result
-as_result <- function(x, ...) {
-  vec_cast(x = x, to = new_result(), ...)
+result_ <- function(status, description, duration) {
+  out <- result(status, description)
+  duration(out) <- duration
+  out
 }
 
+#' Test if object is a result
+#' @param x an object to test
 #' @export
-#' @rdname result
-is_result <- function(x) {
-  vec_is(x, new_result())
+is_result <- function(x) inherits(x, "chex_result")
+
+
+# formatting --------------------------------------------------------------
+
+#' @export
+format.chex_result <- function(x, ...) {
+  bullet <- fmt_bullet(x)
+  body <- fmt_body(x)
+  dur <- fmt_duration(x)
+  reason <- fmt_reason(x)
+
+  paste0(bullet, " ", body, dur, reason)
+}
+
+fmt_style <- function(x) {
+  purrr::map(color(x), cli::make_ansi_style)
+}
+
+fmt_bullet <- function(x, style = fmt_style(x)) {
+  purrr::map2(style, bullet(x), rlang::exec)
+}
+
+fmt_body <- function(x) {
+  status <- status_chr(x)
+  desc <- description(x)
+  out <- paste(status, "...", desc)
+
+  passed <- status == "PASS"
+  vec_slice(out, passed) <- unclass(
+    cli::col_silver(vec_slice(out, passed))
+  )
+  out
+}
+
+fmt_duration <- function(x) {
+  dur <- duration(x)
+  out <- prettyunits::pretty_dt(dur)
+  out <- paste0(" (", out, ")")
+
+  threshold <- 0.5
+  long <- dur >= threshold
+  vec_slice(out, long) <- unclass(
+    cli::col_cyan(vec_slice(out, long))
+  )
+  short <- dur < threshold
+  vec_slice(out, short) <- ""
+  out
+}
+
+fmt_reason <- function(x, style = fmt_style(x)) {
+  reason <- reason(x)
+  out <- purrr::map2_chr(style, reason, rlang::exec)
+
+  no_reason <- is.na(reason)
+  vec_slice(out, no_reason) <- ""
+  vec_slice(out, !no_reason) <- paste0("\n", vec_slice(out, !no_reason))
+  out
 }
 
 
 # output ------------------------------------------------------------------
 
 #' @export
-format.chex_result <- function(x, ...) {
-  format(as_status(x))
-}
+vec_ptype_abbr.chex_result <- function(x, ...) "rslt"
+
+#' @export
+vec_ptype_full.chex_result <- function(x, ...) "result"
 
 #' @export
 obj_print_header.chex_result <- function(x, ...) {
-  if (isTRUE(getOption("chex.verbose", FALSE))) {
-    cli::cat_rule("checkdata")
-    cli::cat_line("version: ", utils::packageVersion("chex"))
-    cli::cat_line()
-  }
+  cli::cat_rule(
+    left = "RESULTS",
+    right = sprintf("[%d]", vec_size(x))
+  )
   invisible(x)
 }
 
 #' @export
 obj_print_data.chex_result <- function(x, ...) {
-  if (vec_is_empty(x)) return(invisible(x))
-  cli::cat_rule("CHECKS")
-  desc <- coalesce(
-    description(x),
-    crayon::silver("(check #", vec_seq_along(x), ")", sep = "")
-  )
-  details <- format_details(x)
-  out <- paste(icon(x), desc, "...", as_status(x))
-  out <- paste0(out, details)
+  if (!length(x)) {
+    cli::cat_line("<no results>", col = "silver")
+    return(invisible(x))
+  }
 
-  cli::cat_line(out)
+  cli::cat_line(format(x))
+
   invisible(x)
 }
 
-format_details <- function(x, bullet = cli::symbol$arrow_right, level = 2L) {
-  bullet <- bullet %||% " "
-  details <- vec_chop(details(x))
-  wrapped <- strwrap(
-    paste(bullet, details),
-    indent = (level - 1L) * 2L,
-    exdent = level * 2L,
-    simplify = FALSE
-  )
-  out <- vapply(wrapped, paste, character(1L), collapse = "\n")
-  out <- colorize(out, color(x))
-  missing <- is.na(details)
-  vec_slice(out, !missing) <- paste0("\n", vec_slice(out, !missing))
-  vec_slice(out, missing) <- ""
-  out
-}
 
+# coercion ----------------------------------------------------------------
 
-# casting / coercion ------------------------------------------------------
-
-#' @method vec_ptype2 chex_result
-#' @export
-#' @export vec_ptype2.chex_result
-#' @rdname chex-vctrs
-vec_ptype2.chex_result <- function(x, y, ...) {
-  UseMethod("vec_ptype2.chex_result", y)
-}
-
-#' @method vec_ptype2.chex_result default
-#' @export
-vec_ptype2.chex_result.default <- function(x, y, ..., x_arg = "x", y_arg = "y") {
-  vec_default_ptype2(x, y, ..., x_arg = x_arg, y_arg = y_arg)
-}
-
-#' @method vec_ptype2.chex_result chex_result
 #' @export
 vec_ptype2.chex_result.chex_result <- function(x, y, ...) new_result()
 
-#' @method vec_ptype2.chex_result character
-#' @export
-vec_ptype2.chex_result.character <- function(x, y, ...) new_status()
-#' @method vec_ptype2.character chex_result
-#' @export
-vec_ptype2.character.chex_result <- function(x, y, ...) new_status()
 
-#' @method vec_cast chex_result
-#' @export
-#' @export vec_cast.chex_result
-#' @rdname chex-vctrs
-vec_cast.chex_result <- function(x, to, ...) {
-  UseMethod("vec_cast.chex_result")
-}
+# casting -----------------------------------------------------------------
 
-#' @method vec_cast.chex_result default
-#' @export
-vec_cast.chex_result.default <- function(x, to, ..., x_arg = "x", to_arg = "to") {
-  vec_default_cast(x, to, x_arg, to_arg)
-}
-
-#' @method vec_cast.chex_result chex_result
 #' @export
 vec_cast.chex_result.chex_result <- function(x, to, ...) x
-
-#' @method vec_cast.character chex_result
-#' @export
-vec_cast.character.chex_result <- function(x, to, ...) {
-  vec_cast(as_status(x), to)
-}
-
-#' @method vec_cast.chex_result logical
 #' @export
 vec_cast.chex_result.logical <- function(x, to, ...) {
-  status <- c("fail", "pass")[x + 1]
-  details <- details(x) %||% NA_character_
-  description <- description(x) %||% NA_character_
-  result(status, details, description)
+  result(x, NA_character_)
 }
-
-#' @method vec_cast.logical chex_result
 #' @export
 vec_cast.logical.chex_result <- function(x, to, ...) {
-  vec_cast(as_status(x), to)
+  vec_cast(as_status(x), to, ...)
 }
-
-#' @method vec_cast.data.frame chex_result
 #' @export
-vec_cast.data.frame.chex_result <- function(x, to, ...) {
-  new_data_frame(vec_data(x))
-}
-
-#' @export
-as.data.frame.chex_result <- function(x, ...) {
-  vec_cast(x, new_data_frame())
-}
-
-
-# aggregate / summary -----------------------------------------------------
-
-#' @export
-vec_math.chex_result <- function(.fn, .x, ...) {
-  switch(.fn,
-    all = all(as.logical(.x), ...),
-    any = any(as.logical(.x), ...),
-    vec_math_base(.fn, .x, ...)
-  )
-}
-
-#' @importFrom stats aggregate
-#' @export
-aggregate.chex_result <- function(x, ...) {
-  x <- vec_slice(x, x != "skip")
-  desc <- crayon::silver("(aggregated)")
-  result <- as_result(all(x))
-  update(result, description = desc)
+vec_cast.chex_status.chex_result <- function(x, to, ...) {
+  status(x)
 }
 
 #' @export
-summary.chex_result <- function(object, ...) {
-  agg <- aggregate(object)
-  list(
-    status = as_status(agg),
-    details = details(agg),
-    total = vec_size(object),
-    counts = vec_count(object)
-  )
+as.data.frame.chex_result <- function(
+  x, row.names = NULL, optional = FALSE, ...
+) {
+  out <- vec_data(x)
+  out$status <- status_chr(x)
+  out$reason <- reason(x)
+  as.data.frame(x = out, row.names = row.names, optional = optional, ...)
 }
 
 
-# fields ------------------------------------------------------------------
+# wrangle -----------------------------------------------------------------
 
-#' @importFrom stats update
-#' @export
-update.chex_result <- function(object, description = NULL, ...) {
-  ellipsis::check_dots_empty()
-  if (!missing(description)) {
-    description(object) <- description
+# zzz.R
+filter.chex_result <- function(.data, ...) {
+  if (!requireNamespace("dplyr", quietly = TRUE)) {
+    stop("Missing required package `dplyr`", call. = FALSE)
   }
-  object
+  x <- dplyr::as_tibble(.data)
+  .data <- dplyr::filter(x, ...)
+  status <- new_status(.data$status, .data$reason)
+  new_result(status, .data$description, .data$duration)
 }
 
-details <- function(x, ...) {
-  UseMethod("details")
+
+# ops ---------------------------------------------------------------------
+
+#' @export
+`!.chex_result` <- function(x) {
+  !as.logical(x)
 }
 
-details.default <- function(x, ...) {
-  attr(x, "details", exact = TRUE) %||% comment(x)
-}
+# data --------------------------------------------------------------------
 
-details.chex_result <- function(x, ...) {
-  field(x, "details")
-}
-
-`details<-` <- function(x, value) {
-  UseMethod("details<-")
-}
-
-`details<-.default` <- function(x, value) {
-  attr(x, "details") <- value
+update_rcrd <- function(x, field, value) {
+  field(x, field) <- vec_recycle(value, vec_size(x))
   x
 }
 
-`details<-.chex_result` <- function(x, value) {
-  field(x, "details") <- vec_recycle(value, vec_size(x))
-  x
+#' @export
+status.chex_result <- function(x, ...) {
+  field(x, "status")
 }
 
+#' @export
+`status<-.chex_result` <- function(x, value) {
+  if (is.character(value)) {
+    value <- new_preset(value)
+  }
+  value <- if (is_preset(value)) {
+    status <- field(x, "status")
+    as_status(value, reason_from = status)
+  } else {
+    vec_cast(value, new_status())
+  }
+  update_rcrd(x, "status", value)
+}
+
+status_chr <- function(x, ...) {
+  as.character(status(x))
+}
+
+#' @export
 description.chex_result <- function(x, ...) {
   field(x, "description")
 }
 
+#' @export
 `description<-.chex_result` <- function(x, value) {
-  field(x, "description") <- vec_recycle(value, vec_size(x))
+  update_rcrd(x, "description", value)
+}
+
+#' @export
+duration.chex_result <- function(x, ...) {
+  stopifnot(is_result(x))
+  field(x, "duration")
+}
+
+#' @export
+`duration<-.chex_result` <- function(x, value) {
+  update_rcrd(x, "duration", value)
+}
+
+#' @export
+reason.chex_result <- function(x, ...) {
+  reason(status(x))
+}
+
+#' @export
+`reason<-.chex_result` <- function(x, value) {
+  status <- field(x, "status")
+  status <- update_rcrd(status, "reason", value)
+  field(x, "status") <- status
   x
+}
+
+color.chex_result <- function(x, ...) {
+  x <- status_chr(x)
+  color(x)
+}
+
+bullet.chex_result <- function(x, ...) {
+  x <- status_chr(x)
+  bullet(x)
 }
