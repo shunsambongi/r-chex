@@ -35,7 +35,7 @@ results <- mtcars %>%
   )
 
 print(results)
-#> -- CHECKS ---------------------------------------------------------------------
-#> v is.data.frame ... PASS
-#> x is.character ... FAIL
+#> -- RESULTS ------------------------------------------------- [2] --
+#> v PASS ... is.data.frame
+#> x FAIL ... is.character
 ```

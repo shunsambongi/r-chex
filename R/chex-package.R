@@ -7,23 +7,7 @@
 ## usethis namespace: end
 NULL
 
-#' Internal vctrs functions
-#'
 #' @import vctrs
-#' @keywords internal
-#' @name chex-vctrs
-NULL
-
-#' Internal rlang functions
-#'
-#' @import rlang
-#' @keywords internal
-#' @name chex-rlang
-NULL
-
-#' Internal zeallot functions
-#'
 #' @importFrom zeallot %<-%
-#' @keywords internal
-#' @name chex-zeallot
+#' @importFrom rlang is_string list2 %||%
 NULL
