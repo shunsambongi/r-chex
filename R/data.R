@@ -34,11 +34,6 @@ description.default <- function(x, ...) {
 }
 
 #' @export
-description.quosure <- function(x, ...) {
-  NextMethod() %||% rlang::as_label(x)
-}
-
-#' @export
 #' @rdname data
 `description<-` <- function(x, value) {
   UseMethod("description<-")
@@ -50,6 +45,17 @@ description.quosure <- function(x, ...) {
   attr(x, "description") <- value
   x
 }
+
+#' Set object description
+#'
+#' @param x object being described
+#' @param description the description
+#' @export
+set_description <- function(x, description) {
+  description(x) <- description
+  x
+}
+
 
 # reason ------------------------------------------------------------------
 
