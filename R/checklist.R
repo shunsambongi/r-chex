@@ -7,9 +7,6 @@ checklist <- function(...) {
 }
 
 #' @export
-as_check.chex_checklist <- function(x, ...) {
-  checklist <- force(x)
-  function(x) {
-    check_that(x, !!!checklist)
-  }
+run_check.chex_checklist <- function(check, x) {
+  check_that(x, !!!check)
 }
