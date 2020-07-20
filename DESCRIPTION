@@ -19,7 +19,8 @@ Imports:
     purrr,
     rlang,
     vctrs,
-    zeallot
+    zeallot,
+    logger
 Suggests: 
     dplyr,
     knitr,
