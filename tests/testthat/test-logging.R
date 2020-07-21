@@ -14,7 +14,7 @@ test_that("logging works for passing results", {
   expect_called(m, n = 1)
   args <- mock_args(m)
   expect_equal(args[[1]][[1]], logger::SUCCESS)
-  expect_equal(args[[1]][[2]], "test description")
+  expect_equivalent(args[[1]][[2]], "test description")
 })
 
 test_that("logging works for failing results", {
@@ -24,7 +24,7 @@ test_that("logging works for failing results", {
   expect_called(m, n = 1)
   args <- mock_args(m)
   expect_equal(args[[1]][[1]], logger::WARN)
-  expect_equal(args[[1]][[2]], "test description 2")
+  expect_equivalent(args[[1]][[2]], "test description 2")
 })
 
 test_that("logging respects options", {
@@ -50,9 +50,9 @@ test_that("logging multiple results works", {
   expect_called(m, n = 2)
   args <- mock_args(m)
   expect_equal(args[[1]][[1]], logger::WARN)
-  expect_equal(args[[1]][[2]], "a")
+  expect_equivalent(args[[1]][[2]], "a")
   expect_equal(args[[2]][[1]], logger::SUCCESS)
-  expect_equal(args[[2]][[2]], "b")
+  expect_equivalent(args[[2]][[2]], "b")
 })
 
 test_that("log_result returns the results", {
@@ -73,4 +73,11 @@ test_that("check_that calls log_result", {
   m <- local_logging_mock()
   check_that(mtcars, is.data.frame, is.character)
   expect_called(m, n = 2)
+})
+
+test_that("formatting is skipped", {
+  m <- local_logging_mock()
+  log_result(result("PASS", "{fakevar}"))
+  args <- mock_args(m)
+  expect_true(attr(args[[1]][[2]], "skip_formatter"))
 })
