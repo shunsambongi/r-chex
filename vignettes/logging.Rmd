@@ -1,0 +1,32 @@
+---
+title: "Logging"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+This package provides logging if the [logger](https://daroczig.github.io/logger/) package is installed. In order to view the logs, add appenders and layouts to the `"chex"` namespace.
+
+```{r setup}
+library(chex)
+library(logger)
+
+log_appender(appender_console, namespace = "chex")
+log_layout(layout_glue_colors, namespace = "chex")
+
+results <- check_that(mtcars, is.data.frame, is.character)
+```
+
+
+The default log levels can be changed using the options `CHEX_PASS_LOG_LEVEL` and `CHEX_FAIL_LOG_LEVEL`. 
+
+```{r}
+options("CHEX_PASS_LOG_LEVEL" = logger::INFO, "CHEX_FAIL_LOG_LEVEL" = logger::INFO)
+
+results <- check_that(mtcars, is.data.frame, is.character)
+```

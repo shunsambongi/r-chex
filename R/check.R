@@ -11,7 +11,9 @@ check_that <- function(.x, ...) {
     }
     check
   })
-  results <- purrr::map2(unname(checks), names(checks), generate_result, .x)
+  results <- purrr::map2(unname(checks), names(checks), function(check, name) {
+    log_result(generate_result(check, name, .x))
+  })
   vec_unchop(results)
 }
 
