@@ -16,7 +16,7 @@ log_result <- function(result) {
     } else {
       next
     }
-    logger::log_level(level, desc, namespace = "chex")
+    logger::log_level(level, logger::skip_formatter(desc), namespace = "chex")
   }
   invisible(result)
 }
