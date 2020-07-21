@@ -19,11 +19,12 @@ Imports:
     purrr,
     rlang,
     vctrs,
-    zeallot,
-    logger
+    zeallot
 Suggests: 
     dplyr,
     knitr,
+    logger,
+    mockery,
     rmarkdown,
     testthat
 VignetteBuilder: 
