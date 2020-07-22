@@ -86,7 +86,7 @@ test_that("equality works", {
 test_that("aggregation works", {
   len <- 20
   every <- result(rep(TRUE, len), NA)
-  some <- vec_assign(every, (1:len) <= 10, result(FALSE, NA))
+  some <- result(c(rep(TRUE, len / 2), rep(FALSE, len / 2)), NA)
   expect_length(every, len)
   expect_length(some, len)
   expect_true(any(every))

@@ -60,7 +60,7 @@ test_that("equality work", {
 test_that("aggregation works", {
   n <- 20
   every <- status_(rep("PASS", n))
-  some <- vec_assign(every, (1:n) <= 10, FALSE)
+  some <- status_(c(rep("PASS", n / 2), rep("FAIL", n / 2)))
   expect_length(every, n)
   expect_length(some, n)
 

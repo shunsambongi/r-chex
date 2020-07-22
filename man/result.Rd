@@ -12,7 +12,7 @@ result(status, description)
 \item logical vector (\code{TRUE} / \code{FALSE})
 \item character vector (\code{"PASS"}, \code{"FAIL"}, etc.)
 \item \code{chex::PASS} or \code{chex::FAIL}
-\item value of \code{\link[chex:PASS]{chex::PASS()}} or \code{\link[chex:FAIL]{chex::FAIL()}}
+\item value of \code{\link[=PASS]{PASS()}} or \code{\link[=FAIL]{FAIL()}}
 }}
 
 \item{description}{the description of the result}

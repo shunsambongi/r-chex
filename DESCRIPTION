@@ -1,6 +1,6 @@
 Package: chex
 Title: Run Checks
-Version: 0.1.2
+Version: 0.1.3
 Authors@R: 
     person(given = "Shun",
            family = "Sambongi",
@@ -26,10 +26,11 @@ Suggests:
     logger,
     mockery,
     rmarkdown,
-    testthat
+    testthat,
+    withr
 VignetteBuilder: 
     knitr
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
