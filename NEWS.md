@@ -1,3 +1,7 @@
+# chex 0.1.3
+
+* Hotfix: fix package log_appender
+
 # chex 0.1.2
 
 * Bugfix: logging ignores formatting and uses result descriptions as-is.

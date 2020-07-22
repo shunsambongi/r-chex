@@ -20,3 +20,19 @@ log_result <- function(result) {
   }
   invisible(result)
 }
+
+init_logging <- function() {
+  if (!requireNamespace("logger", quietly = TRUE)) {
+    return(invisible())
+  }
+
+  try(silent = TRUE, {
+    namespaces <- get(
+      "namespaces", envir = asNamespace("logger"), mode = "environment"
+    )
+    if (!exists("chex", namespaces)) {
+      logger::log_appender(identity, namespace = "chex")
+    }
+  })
+  invisible()
+}

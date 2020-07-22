@@ -18,7 +18,7 @@ fail value. There are a few types which are recognized as pass or fail.
 \itemize{
 \item logical values \code{TRUE} and \code{FALSE} which are recognized as pass and fail,
 respectively
-\item \code{chex::PASS} or the result of calling \code{\link[chex:PASS]{chex::PASS()}} with a reason
+\item \code{chex::PASS} or the result of calling \code{\link[=PASS]{PASS()}} with a reason
 \item likewise for \code{chex::FAIL}
 \item A result object created by \code{\link[=result]{result()}}
 }

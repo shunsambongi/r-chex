@@ -1,5 +1,10 @@
 ---
 title: "Logging"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Logging}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
